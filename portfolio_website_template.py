@@ -54,6 +54,17 @@ root_bucket = template.add_resource(
             BlockPublicPolicy=False,
             RestrictPublicBuckets=False,
         ),
+        VersioningConfiguration=s3.VersioningConfiguration(Status="Enabled"),
+        BucketEncryption=s3.BucketEncryption(
+            ServerSideEncryptionConfiguration=[
+                s3.ServerSideEncryptionRule(
+                    ServerSideEncryptionByDefault=s3.ServerSideEncryptionByDefault(
+                        SSEAlgorithm="aws:kms"
+                    ),
+                    BucketKeyEnabled=False,
+                )
+            ]
+        ),
     )
 )
 
@@ -75,6 +86,17 @@ redirect_bucket = template.add_resource(
             BlockPublicPolicy=False,
             RestrictPublicBuckets=False,
         ),
+        VersioningConfiguration=s3.VersioningConfiguration(Status="Enabled"),
+        BucketEncryption=s3.BucketEncryption(
+            ServerSideEncryptionConfiguration=[
+                s3.ServerSideEncryptionRule(
+                    ServerSideEncryptionByDefault=s3.ServerSideEncryptionByDefault(
+                        SSEAlgorithm="aws:kms"
+                    ),
+                    BucketKeyEnabled=False,
+                )
+            ]
+        ),
     )
 )
 
@@ -82,7 +104,7 @@ redirect_bucket = template.add_resource(
 root_distribution = template.add_resource(
     cloudfront.Distribution(
         "PortfolioRootDistribution",
-        DependsOn="PortfolioRootBucket",  # Ensure the bucket is created first
+        DependsOn="PortfolioRootBucket",  # Ensure the 'root' bucket is created
         DistributionConfig=cloudfront.DistributionConfig(
             Origins=[
                 cloudfront.Origin(
@@ -100,7 +122,7 @@ root_distribution = template.add_resource(
                 )
             ],
             Enabled=True,
-            Comment="'Root' distribution",
+            Comment=f"'Root' distribution ({domain_name})",
             Aliases=[domain_name],
             ViewerCertificate=cloudfront.ViewerCertificate(
                 AcmCertificateArn=Ref(certificate_arn_param),
@@ -128,7 +150,7 @@ root_distribution = template.add_resource(
 redirect_distribution = template.add_resource(
     cloudfront.Distribution(
         "PortfolioRedirectDistribution",
-        DependsOn="PortfolioRedirectBucket",  # Ensure the bucket is created first
+        DependsOn="PortfolioRedirectBucket",  # Ensure the 'redirect' bucket is created
         DistributionConfig=cloudfront.DistributionConfig(
             Origins=[
                 cloudfront.Origin(
@@ -146,7 +168,7 @@ redirect_distribution = template.add_resource(
                 )
             ],
             Enabled=True,
-            Comment="'Redirect' distribution",
+            Comment=f"'Redirect' distribution (www.{domain_name})",
             Aliases=[f"www.{domain_name}"],
             ViewerCertificate=cloudfront.ViewerCertificate(
                 AcmCertificateArn=Ref(certificate_arn_param),
@@ -175,9 +197,9 @@ bucket_policy = template.add_resource(
     s3.BucketPolicy(
         "PortfolioRootBucketPolicy",
         DependsOn=[
-            "PortfolioRootDistribution",
             "PortfolioRootBucket",
-        ],  # Ensure the 'root' bucket and distribution are created first
+            "PortfolioRootDistribution",
+        ],  # Ensure the 'root' bucket and 'root' distribution are created
         Bucket=Ref(root_bucket),
         PolicyDocument={
             "Version": "2012-10-17",
@@ -213,6 +235,7 @@ bucket_policy = template.add_resource(
 a_record_root = template.add_resource(
     route53.RecordSetType(
         "PortfolioRootDNSRecord",
+        DependsOn="PortfolioRootDistribution",  # Ensure the 'root' distribution is created
         HostedZoneId=hosted_zone_id,
         Name=domain_name,
         Type="A",
@@ -227,6 +250,7 @@ a_record_root = template.add_resource(
 a_record_redirect = template.add_resource(
     route53.RecordSetType(
         "PortfolioRedirectDNSRecord",
+        DependsOn="PortfolioRedirectDistribution",  # Ensure the 'redirect' distribution is created
         HostedZoneId=hosted_zone_id,
         Name=f"www.{domain_name}",
         Type="A",

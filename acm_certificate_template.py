@@ -36,7 +36,7 @@ template.add_output(
     Output(
         "CertificateArn",
         Value=Ref(certificate),
-        Export=Export("PortfolioCertificateARN"),  # Name for cross-stack export
+        Export=Export("PortfolioCertificateARN"),
     )
 )
 
