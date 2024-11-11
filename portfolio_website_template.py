@@ -119,7 +119,7 @@ root_distribution = template.add_resource(
                 CachePolicyId="658327ea-f89d-4fab-a63d-7e88639e58f6",  # Managed-CachingOptimized
             ),
             PriceClass="PriceClass_All",
-            HttpVersion="http3",
+            HttpVersion="http2and3",
         ),
     )
 )
@@ -165,7 +165,7 @@ redirect_distribution = template.add_resource(
                 CachePolicyId="658327ea-f89d-4fab-a63d-7e88639e58f6",  # Managed-CachingOptimized
             ),
             PriceClass="PriceClass_All",
-            HttpVersion="http3",
+            HttpVersion="http2and3",
         ),
     )
 )
