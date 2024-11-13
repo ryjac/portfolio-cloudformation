@@ -3,12 +3,14 @@ import time
 import argparse
 
 # Stack names and template files
-MAIN_STACK_NAME = "portfolio-website-stack"
-MAIN_TEMPLATE_FILE = "portfolio-website-stack.yaml"
 ACM_STACK_NAME = "acm-certificate-stack"
 ACM_TEMPLATE_FILE = "acm-certificate-stack.yaml"
+MAIN_STACK_NAME = "portfolio-website-stack"
+MAIN_TEMPLATE_FILE = "portfolio-website-stack.yaml"
+CICD_STACK_NAME = "cicd-pipeline-stack"
+CICD_TEMPLATE_FILE = "cicd-pipeline-stack.yaml"
 
-# List of valid AWS regions (as of 11/09/2024)
+# List of valid AWS regions (as of 11/2024)
 VALID_AWS_REGIONS = [
     "us-east-1",
     "us-east-2",
@@ -36,8 +38,8 @@ VALID_AWS_REGIONS = [
 ]
 
 # Regions
-MAIN_REGION = "us-west-2"  # Default region for the main stack
 ACM_REGION = "us-east-1"  # Required region for ACM certificate
+MAIN_REGION = "us-west-2"  # Default region for the main stacks
 
 # Parse command-line arguments for --region argument (default to MAIN_REGION)
 parser = argparse.ArgumentParser(
@@ -54,8 +56,9 @@ args = parser.parse_args()
 MAIN_REGION = args.region  # overrides default region if user provides --region argument
 
 # Initialize the CloudFormation clients
-cf_client_main = boto3.client("cloudformation", region_name=MAIN_REGION)
 cf_client_acm = boto3.client("cloudformation", region_name=ACM_REGION)
+cf_client_main = boto3.client("cloudformation", region_name=MAIN_REGION)
+cf_client_cicd = boto3.client("cloudformation", region_name=MAIN_REGION)
 
 
 # Load a template file
@@ -180,6 +183,50 @@ def main():
         parameters=[
             {"ParameterKey": "CertificateArn", "ParameterValue": certificate_arn},
             {"ParameterKey": "DeploymentRegion", "ParameterValue": MAIN_REGION},
+        ],
+        region=MAIN_REGION,
+    )
+
+    # Step 4: Retrieve the Distribution ID and RootBucketName after main stack deployment
+    try:
+        stack_outputs = cf_client_main.describe_stacks(StackName=MAIN_STACK_NAME)[
+            "Stacks"
+        ][0]["Outputs"]
+
+        # Initialize variables
+        distribution_id = None
+        root_bucket_name = None
+
+        # Loop through outputs to find the specific values
+        for output in stack_outputs:
+            if output["OutputKey"] == "DistributionId":
+                distribution_id = output["OutputValue"]
+                print(f"Retrieved CloudFront Distribution ID: {distribution_id}")
+            elif output["OutputKey"] == "RootBucketName":
+                root_bucket_name = output["OutputValue"]
+                print(f"Retrieved Root S3 Bucket Name: {root_bucket_name}")
+
+        # Check if values were found
+        if not distribution_id:
+            print("Error: Could not retrieve Distribution ID from main stack.")
+            return
+        if not root_bucket_name:
+            print("Error: Could not retrieve Root S3 Bucket Name from main stack.")
+            return
+
+    except (IndexError, KeyError) as e:
+        print(f"Error: Could not retrieve outputs from main stack. Details: {e}")
+        return
+
+    # Step 5: Deploy the CI/CD pipeline stack with the retrieved Distribution ID
+    cicd_template_body = load_template(CICD_TEMPLATE_FILE)
+    deploy_stack(
+        cf_client_cicd,
+        CICD_STACK_NAME,
+        cicd_template_body,
+        parameters=[
+            {"ParameterKey": "DistributionId", "ParameterValue": distribution_id},
+            {"ParameterKey": "RootBucketName", "ParameterValue": root_bucket_name},
         ],
         region=MAIN_REGION,
     )

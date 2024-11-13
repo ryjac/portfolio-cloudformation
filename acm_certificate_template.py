@@ -9,7 +9,7 @@ hosted_zone_id = os.getenv("HOSTED_ZONE_ID")
 
 # Initialize the CloudFormation template
 template = Template()
-template.set_description("ACM Certificate Stack for portfolio website")
+template.set_description("CloudFormation stack to generate ACM Certificate.")
 
 # Define the SSL certificate for CloudFront using ACM
 certificate = template.add_resource(
@@ -36,7 +36,7 @@ template.add_output(
     Output(
         "CertificateArn",
         Value=Ref(certificate),
-        Export=Export("PortfolioCertificateARN"),
+        Export=Export("PortfolioCertificateARN"),  # Name for cross-stack export
     )
 )
 

@@ -5,6 +5,8 @@ from troposphere import (
     Ref,
     Sub,
     Parameter,
+    Output,
+    Export,
     GetAtt,
     s3,
     cloudfront,
@@ -19,7 +21,7 @@ hosted_zone_id = os.getenv("HOSTED_ZONE_ID")
 # Initialize the CloudFormation template
 template = Template()
 template.set_description(
-    "Infrastructure for hosting a portfolio website using CloudFormation."
+    "CloudFormation stack for hosting a portfolio website with S3, CloudFront, and Route53."
 )
 
 # Add region as a parameter
@@ -31,7 +33,7 @@ region_param = template.add_parameter(
     )
 )
 
-# Retrieve the ACM certificate ARN
+# Retrieve the ACM certificate ARN as a parameter
 certificate_arn_param = template.add_parameter(
     Parameter(
         "CertificateArn",
@@ -40,7 +42,7 @@ certificate_arn_param = template.add_parameter(
     )
 )
 
-# Define S3 bucket for website hosting
+# Define 'root' S3 bucket for website hosting
 root_bucket = template.add_resource(
     s3.Bucket(
         "PortfolioRootBucket",
@@ -69,7 +71,7 @@ root_bucket = template.add_resource(
 )
 
 
-# Define S3 bucket for www-redirect
+# Define 'redirect' S3 bucket for www-redirect
 redirect_bucket = template.add_resource(
     s3.Bucket(
         "PortfolioRedirectBucket",
@@ -258,6 +260,24 @@ a_record_redirect = template.add_resource(
             DNSName=GetAtt(redirect_distribution, "DomainName"),
             HostedZoneId="Z2FDTNDATAQYW2",  # AWS Global CloudFront Hosted Zone ID (don't change this)
         ),
+    )
+)
+
+# Output the 'root' CloudFront Distribution ID for cross-stack reference
+template.add_output(
+    Output(
+        "DistributionId",
+        Value=Ref(root_distribution),
+        Export=Export("PortfolioDistributionID"),  # Name for cross-stack export
+    )
+)
+
+# Output the 'root' S3 Bucket name for cross-stack reference
+template.add_output(
+    Output(
+        "RootBucketName",
+        Value=Ref(root_bucket),
+        Export=Export("PortfolioRootBucketName"),  # Name for cross-stack export
     )
 )
 
