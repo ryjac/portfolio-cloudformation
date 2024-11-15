@@ -2,30 +2,31 @@
 
 This setup uses **Troposphere** and **Stacker** to create **CloudFormation** stacks to automatically create the AWS resources needed to deploy a functional website using **S3**, **CloudFront**, and **AWS Certificate Manager (ACM)**.
 
-You must acquire a domain name and create a Hosted Zone manually before to proceeding.
+_Note: This assumes you have `aws cli` installed._
 
-_Note: This assumes you have the `aws cli` installed. You might have to make an **AWS Access Key** in your AWS account._
+You must acquire a domain and create a Hosted Zone manually in AWS before proceeding.
 
-## 1. Ensure you are using the correct AWS credentials
-
-Run `aws configure` and enter the following:
-
-- AWS Access Key ID
-- AWS Secret Access Key
-- Default region name
-- Default output format
-
-## 2. Install dependencies
+## 1. Install dependencies
 
 Run `pip install troposphere boto3 python-dotenv`
 
-## 3. Modify .env
+## 2. Modify .env
 
-Enter your **Domain Name** and **Hosted zone ID** in the .env file
+Open the `.env` file and enter your:
 
-## 4. Run build commands in order
+- `Domain Name` _e.g., **example.com**_
+- `Hosted Zone ID` _e.g., **Z04705991OWH0GEXAMPLE**_
+- `GITHUB_USER_NAME` _Your github username. e.g., **ryjac**_
+- `GITHUB_REPO_NAME` _The repo you will host your website files. e.g., if it is github.com/ryjac/portfolio you would enter **portfolio**_
+- `GITHUB_APP_CONNECTION_ARN` _e.g., arn:aws:codeconnections:us-west-2:AWS_ACCOUNT_NUMBER:connection/CONNECTION_ID_
+
+## 3. Build the CloudFormation templates
 
 1. `py acm_certificate_template.py`
 2. `py portfolio_website_template.py`
-3. `py deploy_stack --region AWS_REGION`
-   - Note: Choose preferred AWS region. Defaults to us-west-2 if not using region argument.
+3. `py cicd_pipeline_template.py`
+
+## 4. Deploy the CloudFormation stacks
+
+- `py deploy_stack --region AWS_REGION`
+  - Note: Use the `--region` option with your preferred `AWS_REGION` as the argument to specify deployment region for the main stacks. Defaults to `us-west-2` if `--region` is not provided.

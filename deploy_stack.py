@@ -1,14 +1,23 @@
 import boto3
 import time
 import argparse
+import os
+from dotenv import load_dotenv
+
+# Load domain name from .env
+load_dotenv()
+domain_name = os.getenv("DOMAIN_NAME")
+
+# Sanitize domain name
+sanitized_domain = domain_name.replace(".", "-").replace("/", "-")
 
 # Stack names and template files
-ACM_STACK_NAME = "acm-certificate-stack"
-ACM_TEMPLATE_FILE = "acm-certificate-stack.yaml"
-MAIN_STACK_NAME = "portfolio-website-stack"
-MAIN_TEMPLATE_FILE = "portfolio-website-stack.yaml"
-CICD_STACK_NAME = "cicd-pipeline-stack"
-CICD_TEMPLATE_FILE = "cicd-pipeline-stack.yaml"
+ACM_STACK_NAME = f"acm-certificate-stack-{sanitized_domain}"
+ACM_TEMPLATE_FILE = f"acm-certificate-stack-{sanitized_domain}.yaml"
+MAIN_STACK_NAME = f"portfolio-website-stack-{sanitized_domain}"
+MAIN_TEMPLATE_FILE = f"portfolio-website-stack-{sanitized_domain}.yaml"
+CICD_STACK_NAME = f"cicd-pipeline-stack-{sanitized_domain}"
+CICD_TEMPLATE_FILE = f"cicd-pipeline-stack-{sanitized_domain}.yaml"
 
 # List of valid AWS regions (as of 11/2024)
 VALID_AWS_REGIONS = [

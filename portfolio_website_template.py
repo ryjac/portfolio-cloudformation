@@ -18,6 +18,9 @@ load_dotenv()
 domain_name = os.getenv("DOMAIN_NAME")
 hosted_zone_id = os.getenv("HOSTED_ZONE_ID")
 
+# Sanitize domain name
+sanitized_domain = domain_name.replace(".", "-").replace("/", "-")
+
 # Initialize the CloudFormation template
 template = Template()
 template.set_description(
@@ -48,7 +51,7 @@ root_bucket = template.add_resource(
         "PortfolioRootBucket",
         BucketName=domain_name,
         WebsiteConfiguration=s3.WebsiteConfiguration(
-            IndexDocument="index.html", ErrorDocument="error.html"
+            IndexDocument="index.html", ErrorDocument="404.html"
         ),
         PublicAccessBlockConfiguration=s3.PublicAccessBlockConfiguration(
             BlockPublicAcls=False,
@@ -61,7 +64,7 @@ root_bucket = template.add_resource(
             ServerSideEncryptionConfiguration=[
                 s3.ServerSideEncryptionRule(
                     ServerSideEncryptionByDefault=s3.ServerSideEncryptionByDefault(
-                        SSEAlgorithm="aws:kms"
+                        SSEAlgorithm="AES256"
                     ),
                     BucketKeyEnabled=False,
                 )
@@ -93,7 +96,7 @@ redirect_bucket = template.add_resource(
             ServerSideEncryptionConfiguration=[
                 s3.ServerSideEncryptionRule(
                     ServerSideEncryptionByDefault=s3.ServerSideEncryptionByDefault(
-                        SSEAlgorithm="aws:kms"
+                        SSEAlgorithm="AES256"
                     ),
                     BucketKeyEnabled=False,
                 )
@@ -110,7 +113,7 @@ root_distribution = template.add_resource(
         DistributionConfig=cloudfront.DistributionConfig(
             Origins=[
                 cloudfront.Origin(
-                    Id="S3-Portfolio-Root",
+                    Id=f"S3-Portfolio-Root-{sanitized_domain}",
                     DomainName=Sub(
                         "${DomainName}.s3-website-${DeploymentRegion}.amazonaws.com",
                         {
@@ -132,7 +135,7 @@ root_distribution = template.add_resource(
                 MinimumProtocolVersion="TLSv1.2_2021",
             ),
             DefaultCacheBehavior=cloudfront.DefaultCacheBehavior(
-                TargetOriginId="S3-Portfolio-Root",
+                TargetOriginId=f"S3-Portfolio-Root-{sanitized_domain}",
                 ViewerProtocolPolicy="redirect-to-https",
                 AllowedMethods=["GET", "HEAD"],
                 CachedMethods=["GET", "HEAD"],
@@ -156,7 +159,7 @@ redirect_distribution = template.add_resource(
         DistributionConfig=cloudfront.DistributionConfig(
             Origins=[
                 cloudfront.Origin(
-                    Id="S3-Portfolio-Redirect",
+                    Id=f"S3-Portfolio-Redirect-{sanitized_domain}",
                     DomainName=Sub(
                         "www.${DomainName}.s3-website-${DeploymentRegion}.amazonaws.com",
                         {
@@ -178,7 +181,7 @@ redirect_distribution = template.add_resource(
                 MinimumProtocolVersion="TLSv1.2_2021",
             ),
             DefaultCacheBehavior=cloudfront.DefaultCacheBehavior(
-                TargetOriginId="S3-Portfolio-Redirect",
+                TargetOriginId=f"S3-Portfolio-Redirect-{sanitized_domain}",
                 ViewerProtocolPolicy="redirect-to-https",
                 AllowedMethods=["GET", "HEAD"],
                 CachedMethods=["GET", "HEAD"],
@@ -207,14 +210,14 @@ bucket_policy = template.add_resource(
             "Version": "2012-10-17",
             "Statement": [
                 {
-                    "Sid": "PublicReadForWebsiteAccess",
+                    "Sid": f"PublicReadForWebsiteAccess-{sanitized_domain}",
                     "Effect": "Allow",
                     "Principal": "*",
                     "Action": "s3:GetObject",
                     "Resource": f"arn:aws:s3:::{domain_name}/*",
                 },
                 {
-                    "Sid": "CloudFrontDistributionReadAccess",
+                    "Sid": f"CloudFrontDistributionReadAccess-{sanitized_domain}",
                     "Effect": "Allow",
                     "Principal": {"Service": "cloudfront.amazonaws.com"},
                     "Action": "s3:GetObject",
@@ -282,7 +285,9 @@ template.add_output(
 )
 
 # Export the CloudFormation template as YAML
-with open("portfolio-website-stack.yaml", "w") as f:
+with open(f"portfolio-website-stack-{sanitized_domain}.yaml", "w") as f:
     f.write(template.to_yaml())
 
-print("Generated CloudFormation template: portfolio-website-stack.yaml")
+print(
+    f"Generated CloudFormation template: portfolio-website-stack-{sanitized_domain}.yaml"
+)

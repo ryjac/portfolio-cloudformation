@@ -7,6 +7,9 @@ load_dotenv()
 domain_name = os.getenv("DOMAIN_NAME")
 hosted_zone_id = os.getenv("HOSTED_ZONE_ID")
 
+# Sanitize domain name
+sanitized_domain = domain_name.replace(".", "-").replace("/", "-")
+
 # Initialize the CloudFormation template
 template = Template()
 template.set_description("CloudFormation stack to generate ACM Certificate.")
@@ -41,7 +44,9 @@ template.add_output(
 )
 
 # Write the template to a YAML file
-with open("acm-certificate-stack.yaml", "w") as f:
+with open(f"acm-certificate-stack-{sanitized_domain}.yaml", "w") as f:
     f.write(template.to_yaml())
 
-print("Generated CloudFormation template: acm-certificate-stack.yaml")
+print(
+    f"Generated CloudFormation template: acm-certificate-stack-{sanitized_domain}.yaml"
+)
