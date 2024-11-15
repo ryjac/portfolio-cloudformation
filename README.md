@@ -31,4 +31,4 @@ Open the `.env` file and enter your:
 ## 4. Deploy the CloudFormation stacks
 
 - `py deploy_stack --region AWS_REGION`
-  - Note: Use the `--region` option with your preferred `AWS_REGION` as the argument to specify deployment region for the main stacks. Defaults to `us-west-2` if `--region` is not provided.
+  - **Note:** Use the `--region` option with your preferred `AWS_REGION` as the argument to specify deployment region for the main stacks. Defaults to `us-west-2` if `--region` is not provided.
