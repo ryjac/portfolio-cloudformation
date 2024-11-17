@@ -22,7 +22,7 @@ Open the `.env` file and enter your:
 - `HOSTED_ZONE_ID` _e.g., **Z04705991OWH0GEXAMPLE**_
 - `GITHUB_USER_NAME` _Your github username. e.g., **ryjac**_
 - `GITHUB_REPO_NAME` _The repo you will host your website files. e.g., if it is **github.com/ryjac/portfolio** you would enter **portfolio**_
-- `GITHUB_APP_CONNECTION_ARN` _e.g., **arn:aws:codeconnections:us-west-2:AWS_ACCOUNT_NUMBER:connection/CONNECTION_ID**_
+- `GITHUB_APP_CONNECTION_ARN` _e.g., **arn:aws:codeconnections:AWS_REGION:AWS_ACCOUNT_NUMBER:connection/CONNECTION_ID**_
 
 ## 3. Build the CloudFormation templates
 
