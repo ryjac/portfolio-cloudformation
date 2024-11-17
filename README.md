@@ -2,6 +2,8 @@
 
 This setup uses **Troposphere** and **Boto3** to deploy **CloudFormation** stacks which automatically provision the AWS resources needed to create a functional portfolio website using **S3**, **CloudFront**, **AWS Certificate Manager (ACM)**, and **Route53**. It also creates an automated CI/CD pipeline using **AWS CodeBuild** and **AWS CodePipeline** which will automatically redeploy your website every time you push changes to your GitHub repo, and invalidates **CloudFront** cache to display changes immediately.
 
+[Learn how to deploy on AWS with Infrastructure as Code](https://community.aws/content/2ogmleiR2h6F1j9bJ3Ibc8dTJ4J/host-your-portfolio-on-aws-with-infrastructure-as-code-iac)
+
 Use your own website files, or clone my portfolio template from https://github.com/ryjac/portfolio.
 
 _Note: This assumes you have `aws cli` installed._
