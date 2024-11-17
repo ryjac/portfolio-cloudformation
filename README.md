@@ -8,7 +8,7 @@ Use your own website files, or clone my portfolio template from https://github.c
 
 _Note: This assumes you have `aws cli` installed._
 
-**You must acquire a domain and create a Hosted Zone manually in AWS before proceeding.**
+**You must acquire a domain and create a Hosted Zone in AWS before proceeding.**
 
 ## 1. Install dependencies
 
