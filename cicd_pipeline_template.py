@@ -153,6 +153,12 @@ buildspec = """
         install:
             commands:
                 - npm install
+        pre_build:
+            commands:
+                - echo "Checking for .env file"
+                - if [ -f .env ]; then export $(cat .env | xargs); else echo ".env file not found. Skipping."; fi
+                - echo "Checking for .env.local file"
+                - if [ -f .env.local ]; then export $(cat .env.local | xargs); else echo ".env.local file not found. Skipping."; fi
         build:
             commands:
                 - npm run build
