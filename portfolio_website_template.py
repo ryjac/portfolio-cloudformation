@@ -271,7 +271,9 @@ template.add_output(
     Output(
         "DistributionId",
         Value=Ref(root_distribution),
-        Export=Export("PortfolioDistributionID"),  # Name for cross-stack export
+        Export=Export(
+            f"PortfolioDistributionID-{sanitized_domain}"
+        ),  # Name for cross-stack export
     )
 )
 
@@ -280,7 +282,9 @@ template.add_output(
     Output(
         "RootBucketName",
         Value=Ref(root_bucket),
-        Export=Export("PortfolioRootBucketName"),  # Name for cross-stack export
+        Export=Export(
+            f"PortfolioRootBucketName-{sanitized_domain}"
+        ),  # Name for cross-stack export
     )
 )
 
