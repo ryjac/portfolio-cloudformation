@@ -115,6 +115,8 @@ codebuild_role = template.add_resource(
                             "Action": [
                                 "s3:GetObject",
                                 "s3:PutObject",
+                                "s3:DeleteObject",
+                                "s3:ListBucket",
                                 "s3:GetBucketLocation",
                             ],
                             "Resource": [
@@ -123,7 +125,18 @@ codebuild_role = template.add_resource(
                                 ),  # artifact S3 bucket
                                 Join(
                                     "", ["arn:aws:s3:::", Ref(artifact_bucket), "/*"]
-                                ),  # Objects in artifact S3 bucket
+                                ),  # objects in artifact S3 bucket
+                                Join(
+                                    "", ["arn:aws:s3:::", Ref(root_bucket_name_param)]
+                                ),  # 'root' S3 bucket
+                                Join(
+                                    "",
+                                    [
+                                        "arn:aws:s3:::",
+                                        Ref(root_bucket_name_param),
+                                        "/*",
+                                    ],
+                                ),  # objects in 'root' S3 bucket
                             ],
                         },
                         {
@@ -152,20 +165,28 @@ buildspec = """
     phases:
         install:
             commands:
+                - echo "Installing dependencies"
                 - npm install
+                
         pre_build:
             commands:
                 - echo "Checking for .env file"
                 - if [ -f .env ]; then export $(cat .env | xargs); else echo ".env file not found. Skipping."; fi
                 - echo "Checking for .env.local file"
                 - if [ -f .env.local ]; then export $(cat .env.local | xargs); else echo ".env.local file not found. Skipping."; fi
+                
         build:
             commands:
+                - echo "Creating production build"
                 - npm run build
 
         post_build:
             commands:
+                - echo "Syncing build artifacts with S3"
+                - aws s3 sync ./out s3://$ROOT_BUCKET_NAME --delete
+                - echo "Invalidating CloudFront cache"
                 - aws cloudfront create-invalidation --distribution-id $DISTRIBUTION_ID --paths "/*"
+                
     artifacts:
         files:
             - "**/*"
@@ -194,7 +215,8 @@ codebuild_project = template.add_resource(
             Image="aws/codebuild/amazonlinux2-x86_64-standard:5.0",
             Type="LINUX_CONTAINER",
             EnvironmentVariables=[
-                {"Name": "DISTRIBUTION_ID", "Value": Ref(distribution_id_param)}
+                {"Name": "ROOT_BUCKET_NAME", "Value": Ref(root_bucket_name_param)},
+                {"Name": "DISTRIBUTION_ID", "Value": Ref(distribution_id_param)},
             ],
         ),
         ServiceRole=Ref(codebuild_role),
